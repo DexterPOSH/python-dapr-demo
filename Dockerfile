@@ -1,7 +1,19 @@
-FROM python:3.8-slim-buster
-COPY . /app
+FROM python:3.10-slim as build
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends \
+build-essential gcc 
+
 WORKDIR /app
-RUN pip install --upgrade pip &&  pip install /app/requirements.txt
-ENTRYPOINT ["python"]
-EXPOSE 8080
-CMD ["app.py"]
+RUN python -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+FROM python:3.10-slim
+WORKDIR /app
+COPY --from=build /app/venv ./venv
+COPY . .
+
+ENV PATH="/app/venv/bin:$PATH"
+CMD [ "python", "app.py" ]
